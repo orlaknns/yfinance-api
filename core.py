@@ -31,6 +31,17 @@ def obtener_tipo_cambio_usdclp(periodo: str) -> pd.Series | None:
         return None
 
 
+def _extraer_serie(datos_raw: pd.DataFrame, ticker: str, lista_final: list[str]) -> pd.Series:
+    """Extrae serie de precios independientemente de si el DataFrame es simple o MultiIndex."""
+    if isinstance(datos_raw.columns, pd.MultiIndex):
+        if ticker not in datos_raw.columns.get_level_values(1):
+            raise KeyError(f"{ticker} no encontrado")
+        return datos_raw["Close"][ticker].dropna()
+    else:
+        # Un solo ticker: yf.download devuelve columnas simples
+        return datos_raw["Close"].dropna()
+
+
 def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
     """
     Calcula métricas fundamentales y estadísticas para una lista de tickers.
@@ -55,12 +66,7 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
 
     for ticker in lista_final:
         try:
-            if len(lista_final) == 1:
-                serie_precios = datos_raw["Close"].dropna()
-            else:
-                if ticker not in datos_raw.columns.get_level_values(1):
-                    continue
-                serie_precios = datos_raw["Close"][ticker].dropna()
+            serie_precios = _extraer_serie(datos_raw, ticker, lista_final)
 
             if ticker in tickers_chile and tc_usdclp is not None:
                 tc_alineado = tc_usdclp.reindex(serie_precios.index, method="ffill")
@@ -118,12 +124,7 @@ def obtener_correlacion(tickers: list[dict], periodo: str = "1y") -> dict:
 
     for ticker in lista_final:
         try:
-            if len(lista_final) == 1:
-                serie = datos_raw["Close"].dropna()
-            else:
-                if ticker not in datos_raw.columns.get_level_values(1):
-                    continue
-                serie = datos_raw["Close"][ticker].dropna()
+            serie = _extraer_serie(datos_raw, ticker, lista_final)
 
             if ticker in tickers_chile and tc_usdclp is not None:
                 tc_alineado = tc_usdclp.reindex(serie.index, method="ffill")
