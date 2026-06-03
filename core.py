@@ -23,8 +23,11 @@ def parsear_tickers(tickers: list[dict]) -> list[str]:
 
 def obtener_tipo_cambio_usdclp(periodo: str) -> pd.Series | None:
     try:
-        tc = yf.download("CLPUSD=X", period=periodo, interval="1d",
-                         auto_adjust=True, progress=False)["Close"]
+        datos = yf.download("CLPUSD=X", period=periodo, interval="1d",
+                            auto_adjust=True, progress=False)
+        # yfinance devuelve MultiIndex (Ticker, PriceType) incluso para un solo ticker
+        tc = datos["CLPUSD=X"]["Close"] if "CLPUSD=X" in datos.columns.get_level_values(0) \
+            else datos["Close"].squeeze()
         tc.name = "USDCLP"
         return tc
     except Exception:
@@ -33,21 +36,14 @@ def obtener_tipo_cambio_usdclp(periodo: str) -> pd.Series | None:
 
 def _extraer_serie(datos_raw: pd.DataFrame, ticker: str) -> pd.Series:
     """
-    Extrae serie de precios manejando ambas estructuras de yfinance:
-    - 1 ticker:  MultiIndex (Ticker, PriceType) → datos_raw[ticker]["Close"]
-    - N tickers: MultiIndex (PriceType, Ticker) → datos_raw["Close"][ticker]
+    Extrae serie de precios de cierre ajustado.
+    yfinance con group_by='ticker' siempre devuelve MultiIndex (Ticker, PriceType)
+    independientemente del número de tickers.
     """
-    level_0 = datos_raw.columns.get_level_values(0).tolist()
-    if ticker in level_0:
-        # Un solo ticker: (Ticker, PriceType)
-        return datos_raw[ticker]["Close"].dropna()
-    elif "Close" in level_0:
-        # Múltiples tickers: (PriceType, Ticker)
-        if ticker not in datos_raw["Close"].columns:
-            raise KeyError(f"{ticker} no encontrado en los datos descargados")
-        return datos_raw["Close"][ticker].dropna()
-    else:
-        raise KeyError(f"Estructura inesperada en DataFrame para {ticker}")
+    level_0 = datos_raw.columns.get_level_values(0).unique().tolist()
+    if ticker not in level_0:
+        raise KeyError(f"{ticker} no encontrado en los datos descargados")
+    return datos_raw[ticker]["Close"].dropna()
 
 
 def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
