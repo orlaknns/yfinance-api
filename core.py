@@ -31,15 +31,23 @@ def obtener_tipo_cambio_usdclp(periodo: str) -> pd.Series | None:
         return None
 
 
-def _extraer_serie(datos_raw: pd.DataFrame, ticker: str, lista_final: list[str]) -> pd.Series:
-    """Extrae serie de precios independientemente de si el DataFrame es simple o MultiIndex."""
-    if isinstance(datos_raw.columns, pd.MultiIndex):
-        if ticker not in datos_raw.columns.get_level_values(1):
-            raise KeyError(f"{ticker} no encontrado")
+def _extraer_serie(datos_raw: pd.DataFrame, ticker: str) -> pd.Series:
+    """
+    Extrae serie de precios manejando ambas estructuras de yfinance:
+    - 1 ticker:  MultiIndex (Ticker, PriceType) → datos_raw[ticker]["Close"]
+    - N tickers: MultiIndex (PriceType, Ticker) → datos_raw["Close"][ticker]
+    """
+    level_0 = datos_raw.columns.get_level_values(0).tolist()
+    if ticker in level_0:
+        # Un solo ticker: (Ticker, PriceType)
+        return datos_raw[ticker]["Close"].dropna()
+    elif "Close" in level_0:
+        # Múltiples tickers: (PriceType, Ticker)
+        if ticker not in datos_raw["Close"].columns:
+            raise KeyError(f"{ticker} no encontrado en los datos descargados")
         return datos_raw["Close"][ticker].dropna()
     else:
-        # Un solo ticker: yf.download devuelve columnas simples
-        return datos_raw["Close"].dropna()
+        raise KeyError(f"Estructura inesperada en DataFrame para {ticker}")
 
 
 def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
@@ -66,7 +74,7 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
 
     for ticker in lista_final:
         try:
-            serie_precios = _extraer_serie(datos_raw, ticker, lista_final)
+            serie_precios = _extraer_serie(datos_raw, ticker)
 
             if ticker in tickers_chile and tc_usdclp is not None:
                 tc_alineado = tc_usdclp.reindex(serie_precios.index, method="ffill")
@@ -91,14 +99,15 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
                 "nombre": info.get("longName"),
                 "moneda": info.get("currency"),
                 "precio_actual": info.get("currentPrice", info.get("previousClose")),
-                "dividend_yield_pct": round((info.get("dividendYield", 0) or 0) * 100, 2),
+                "dividend_yield_pct": round((info.get("dividendYield", 0) or 0), 2),
                 "trailing_per": info.get("trailingPE"),
                 "retorno_anualizado_pct": round(retorno_anualizado * 100, 2),
                 "volatilidad_anualizada_pct": round(volatilidad_anualizada * 100, 2),
                 "sharpe_ratio": round(sharpe, 2) if sharpe is not None else None,
             })
 
-        except Exception:
+        except Exception as e:
+            print(f"[ERROR] {ticker}: {type(e).__name__}: {e}")
             continue
 
     return metricas_activos
@@ -124,7 +133,7 @@ def obtener_correlacion(tickers: list[dict], periodo: str = "1y") -> dict:
 
     for ticker in lista_final:
         try:
-            serie = _extraer_serie(datos_raw, ticker, lista_final)
+            serie = _extraer_serie(datos_raw, ticker)
 
             if ticker in tickers_chile and tc_usdclp is not None:
                 tc_alineado = tc_usdclp.reindex(serie.index, method="ffill")

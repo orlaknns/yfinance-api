@@ -68,7 +68,7 @@ def metricas(body: ConsultaRequest):
 
     resultado = obtener_metricas(tickers_dict, body.periodo)
     cache_set(cache_key, resultado)
-    return {"source": "live", "data": resultado}
+    return {"source": "live", "data": resultado, "tickers_procesados": len(resultado)}
 
 @app.post("/correlacion", dependencies=[Depends(verificar_api_key)])
 def correlacion(body: ConsultaRequest):
