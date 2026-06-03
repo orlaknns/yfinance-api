@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>yFinance API — Documentación</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3248;
+      --accent: #4f8ef7;
+      --accent2: #7c5cbf;
+      --green: #3ecf8e;
+      --yellow: #f6c90e;
+      --red: #f05252;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --code-bg: #0d1117;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* Layout */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    nav {
+      width: 260px;
+      min-width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 2rem 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .nav-logo {
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .nav-logo h1 { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+    .nav-logo span { font-size: 0.75rem; color: var(--muted); }
+    nav a {
+      display: block;
+      padding: 0.45rem 1.5rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.15s, background 0.15s;
+      border-left: 3px solid transparent;
+    }
+    nav a:hover { color: var(--text); background: var(--surface2); }
+    nav a.active { color: var(--accent); border-left-color: var(--accent); }
+    .nav-section {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding: 1rem 1.5rem 0.25rem;
+    }
+
+    /* Main content */
+    main {
+      flex: 1;
+      max-width: 900px;
+      padding: 3rem 3rem 6rem;
+    }
+
+    /* Sections */
+    section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 1.1rem; font-weight: 600; margin: 1.75rem 0 0.75rem; color: var(--text); }
+    h4 { font-size: 0.9rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 1.5rem 0 0.5rem; }
+    p { margin-bottom: 0.75rem; color: var(--muted); }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+    .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .hero h1 span { color: var(--accent); }
+    .hero p { font-size: 1rem; margin-bottom: 1.25rem; }
+    .hero-meta { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .hero-meta div { font-size: 0.8rem; }
+    .hero-meta strong { color: var(--text); }
+    .hero-meta span { color: var(--muted); }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-green { background: rgba(62,207,142,0.15); color: var(--green); }
+    .badge-blue { background: rgba(79,142,247,0.15); color: var(--accent); }
+    .badge-yellow { background: rgba(246,201,14,0.15); color: var(--yellow); }
+    .badge-red { background: rgba(240,82,82,0.15); color: var(--red); }
+
+    /* Endpoint cards */
+    .endpoint-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+    .endpoint-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      background: var(--surface);
+      cursor: pointer;
+      user-select: none;
+    }
+    .endpoint-header:hover { background: var(--surface2); }
+    .method {
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      min-width: 52px;
+      text-align: center;
+    }
+    .method-get { background: rgba(62,207,142,0.2); color: var(--green); }
+    .method-post { background: rgba(79,142,247,0.2); color: var(--accent); }
+    .endpoint-path { font-family: monospace; font-size: 1rem; font-weight: 600; }
+    .endpoint-desc { color: var(--muted); font-size: 0.875rem; margin-left: auto; }
+    .endpoint-body { padding: 1.5rem; border-top: 1px solid var(--border); background: var(--bg); }
+
+    /* Code blocks */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      margin: 0.75rem 0;
+      position: relative;
+    }
+    code { font-family: "SF Mono", "Fira Code", monospace; }
+    p code, li code, td code {
+      background: var(--surface2);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 4px;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .copy-btn:hover { color: var(--text); }
+
+    /* Syntax highlight */
+    .kw { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .key { color: #82aaff; }
+    .cmt { color: #546e7a; font-style: italic; }
+    .bash-prompt { color: var(--muted); }
+    .bash-cmd { color: var(--green); }
+    .bash-flag { color: var(--yellow); }
+    .bash-val { color: #c3e88d; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; margin: 0.75rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th {
+      text-align: left;
+      padding: 0.6rem 1rem;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface); }
+
+    /* Test cards */
+    .test-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+    }
+    .test-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      background: var(--surface);
+    }
+    .test-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .test-title { font-weight: 600; font-size: 0.9rem; }
+    .test-body { padding: 1rem 1.25rem; background: var(--bg); }
+    .expected {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .expected strong { color: var(--green); white-space: nowrap; }
+
+    /* Restriction cards */
+    .restriction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .restriction-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      background: var(--surface);
+    }
+    .restriction-card .icon { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .restriction-card h4 { color: var(--yellow); text-transform: none; font-size: 0.875rem; margin: 0 0 0.4rem; letter-spacing: 0; }
+    .restriction-card p { font-size: 0.825rem; margin: 0; }
+
+    /* Fields reference */
+    .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .field-group h4 {
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.4rem;
+      margin-bottom: 0.5rem;
+    }
+    .field-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid rgba(46,50,72,0.5);
+      font-size: 0.82rem;
+    }
+    .field-item:last-child { border-bottom: none; }
+    .field-name { font-family: monospace; color: var(--accent); font-size: 0.8rem; }
+    .field-desc { color: var(--muted); text-align: right; max-width: 55%; }
+
+    /* Correlation table */
+    .corr-legend { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .corr-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .corr-dot {
+      width: 12px; height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    /* Alert notes */
+    .alert-note {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0.875rem 1.25rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+    .alert-note strong { color: var(--text); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @media (max-width: 768px) {
+      nav { display: none; }
+      main { padding: 1.5rem; }
+      .fields-grid, .restriction-grid { grid-template-columns: 1fr; }
+      .endpoint-desc { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav>
+    <div class="nav-logo">
+      <h1>yFinance API</h1>
+      <span>v1.0.0 — Documentación</span>
+    </div>
+    <div class="nav-section">General</div>
+    <a href="#intro">Introducción</a>
+    <a href="#auth">Autenticación</a>
+    <div class="nav-section">Endpoints</div>
+    <a href="#health">GET /health</a>
+    <a href="#metricas">POST /metricas</a>
+    <a href="#correlacion">POST /correlacion</a>
+    <div class="nav-section">Referencia</div>
+    <a href="#yfinance-fields">Campos yfinance</a>
+    <a href="#restrictions">Restricciones</a>
+    <div class="nav-section">Testing</div>
+    <a href="#tests">Suite de pruebas</a>
+    <a href="#integration">Integración alertas</a>
+  </nav>
+
+  <!-- Main -->
+  <main>
+
+    <!-- Hero -->
+    <div class="hero">
+      <h1>yFinance <span>API</span></h1>
+      <p>API REST para consulta de métricas financieras de tickers USA y Chile (IPSA), con normalización FX y cálculo de indicadores de riesgo/retorno.</p>
+      <div class="hero-meta">
+        <div><strong>URL Base</strong><br><span>https://yfinance-api-prod.up.railway.app</span></div>
+        <div><strong>Versión</strong><br><span>1.0.0</span></div>
+        <div><strong>Fuente</strong><br><span>Yahoo Finance / yfinance &ge;0.2.x</span></div>
+        <div><strong>Estado</strong><br><span class="badge badge-green">● Online</span></div>
+      </div>
+    </div>
+
+    <!-- Intro -->
+    <section id="intro">
+      <h2>Introducción</h2>
+      <p>Esta API permite consultar métricas fundamentales y estadísticas para carteras mixtas de activos financieros. Soporta ETFs y acciones de mercados USA (NYSE, NASDAQ) y Chile (Bolsa de Santiago, sufijo <code>.SN</code>).</p>
+      <p>Los activos chilenos se convierten automáticamente a USD antes de calcular métricas, permitiendo comparar directamente activos de ambos mercados.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Característica</th><th>Detalle</th></tr></thead>
+          <tbody>
+            <tr><td>Protocolo</td><td>HTTPS</td></tr>
+            <tr><td>Formato</td><td>JSON (request y response)</td></tr>
+            <tr><td>Autenticación</td><td>API Key via header <code>X-API-Key</code></td></tr>
+            <tr><td>Caché</td><td>15 minutos en memoria</td></tr>
+            <tr><td>Máximo tickers por request</td><td>20</td></tr>
+            <tr><td>Tasa libre de riesgo (Sharpe)</td><td>4.5% (Fed Funds)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Auth -->
+    <section id="auth">
+      <h2>Autenticación</h2>
+      <p>Todos los endpoints excepto <code>/health</code> requieren el siguiente header en cada request:</p>
+      <pre><code><span class="key">X-API-Key</span>: <span class="str">bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk</span></code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Código HTTP</th><th>Descripción</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-red">403</span></td><td>API Key inválida o ausente</td></tr>
+            <tr><td><span class="badge badge-red">500</span></td><td>API Key no configurada en el servidor</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Endpoints -->
+    <section id="health">
+      <h2>Endpoints</h2>
+
+      <div class="endpoint-card">
+        <div class="endpoint-header">
+          <span class="method method-get">GET</span>
+          <span class="endpoint-path">/health</span>
+          <span class="endpoint-desc">Sin autenticación — verifica disponibilidad</span>
+        </div>
+        <div class="endpoint-body">
+          <p>Verifica que el servicio está online. No requiere <code>X-API-Key</code>.</p>
+          <h4>Respuesta</h4>
+          <pre><code>{
+  <span class="key">"status"</span>: <span class="str">"ok"</span>,
+  <span class="key">"timestamp"</span>: <span class="str">"2026-06-03T20:13:02.999371"</span>
+}</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="metricas">
+      <div class="endpoint-card">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/metricas</span>
+          <span class="endpoint-desc">Métricas fundamentales y estadísticas</span>
+        </div>
+        <div class="endpoint-body">
+          <p>Devuelve métricas fundamentales y estadísticas para hasta <strong>20 tickers</strong>. Los activos chilenos se convierten a USD automáticamente. Resultado cacheado 15 minutos.</p>
+
+          <h4>Request Body</h4>
+          <pre><code>{
+  <span class="key">"tickers"</span>: [
+    { <span class="key">"ticker"</span>: <span class="str">"SCHD"</span>, <span class="key">"mercado"</span>: <span class="str">"USA"</span> },
+    { <span class="key">"ticker"</span>: <span class="str">"COPEC"</span>, <span class="key">"mercado"</span>: <span class="str">"CHILE"</span> }
+  ],
+  <span class="key">"periodo"</span>: <span class="str">"1y"</span>
+}</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+
+          <h4>Parámetros</h4>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Campo</th><th>Tipo</th><th>Requerido</th><th>Descripción</th></tr></thead>
+              <tbody>
+                <tr><td><code>tickers</code></td><td>array</td><td><span class="badge badge-red">Sí</span></td><td>Lista de hasta 20 tickers</td></tr>
+                <tr><td><code>tickers[].ticker</code></td><td>string</td><td><span class="badge badge-red">Sí</span></td><td>Símbolo del activo. Para Chile, sin sufijo <code>.SN</code></td></tr>
+                <tr><td><code>tickers[].mercado</code></td><td>string</td><td><span class="badge badge-blue">No</span></td><td><code>"USA"</code> (default) o <code>"CHILE"</code></td></tr>
+                <tr><td><code>periodo</code></td><td>string</td><td><span class="badge badge-blue">No</span></td><td>Período histórico. Default: <code>"1y"</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Períodos válidos</h4>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Valor</th><th>Descripción</th><th>Valor</th><th>Descripción</th></tr></thead>
+              <tbody>
+                <tr><td><code>1d</code></td><td>1 día</td><td><code>2y</code></td><td>2 años</td></tr>
+                <tr><td><code>5d</code></td><td>5 días</td><td><code>5y</code></td><td>5 años</td></tr>
+                <tr><td><code>1mo</code></td><td>1 mes</td><td><code>10y</code></td><td>10 años</td></tr>
+                <tr><td><code>3mo</code></td><td>3 meses</td><td><code>ytd</code></td><td>Año actual</td></tr>
+                <tr><td><code>6mo</code></td><td>6 meses</td><td><code>max</code></td><td>Máximo histórico</td></tr>
+                <tr><td><code>1y</code></td><td>1 año <span class="badge badge-blue">default</span></td><td></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Respuesta</h4>
+          <pre><code>{
+  <span class="key">"source"</span>: <span class="str">"live"</span>,            <span class="cmt">// "live" o "cache"</span>
+  <span class="key">"tickers_procesados"</span>: <span class="num">2</span>,
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"ticker"</span>: <span class="str">"SCHD"</span>,
+      <span class="key">"nombre"</span>: <span class="str">"Schwab U.S. Dividend Equity ETF"</span>,
+      <span class="key">"moneda"</span>: <span class="str">"USD"</span>,
+      <span class="key">"precio_actual"</span>: <span class="num">32.37</span>,
+      <span class="key">"dividend_yield_pct"</span>: <span class="num">3.29</span>,
+      <span class="key">"trailing_per"</span>: <span class="num">19.20</span>,
+      <span class="key">"retorno_anualizado_pct"</span>: <span class="num">24.79</span>,
+      <span class="key">"volatilidad_anualizada_pct"</span>: <span class="num">10.94</span>,
+      <span class="key">"sharpe_ratio"</span>: <span class="num">1.86</span>
+    }
+  ]
+}</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+
+          <h4>Campos de respuesta</h4>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Campo</th><th>Descripción</th><th>Fuente</th></tr></thead>
+              <tbody>
+                <tr><td><code>source</code></td><td><code>"live"</code> o <code>"cache"</code></td><td>Interno</td></tr>
+                <tr><td><code>tickers_procesados</code></td><td>Tickers con datos válidos retornados</td><td>Interno</td></tr>
+                <tr><td><code>ticker</code></td><td>Símbolo formateado (ej: <code>COPEC.SN</code>)</td><td>yfinance</td></tr>
+                <tr><td><code>nombre</code></td><td>Nombre completo del activo</td><td><code>info.longName</code></td></tr>
+                <tr><td><code>moneda</code></td><td>Moneda original del activo</td><td><code>info.currency</code></td></tr>
+                <tr><td><code>precio_actual</code></td><td>Precio de cierre más reciente</td><td><code>info.currentPrice</code></td></tr>
+                <tr><td><code>dividend_yield_pct</code></td><td>Dividend yield en % (ej: 3.29 = 3.29%)</td><td><code>info.dividendYield</code></td></tr>
+                <tr><td><code>trailing_per</code></td><td>P/E ratio trailing 12 meses</td><td><code>info.trailingPE</code></td></tr>
+                <tr><td><code>retorno_anualizado_pct</code></td><td>Retorno anualizado histórico en %</td><td><code>log_ret.mean() × 252</code></td></tr>
+                <tr><td><code>volatilidad_anualizada_pct</code></td><td>Volatilidad anualizada en %</td><td><code>log_ret.std() × √252</code></td></tr>
+                <tr><td><code>sharpe_ratio</code></td><td>Sharpe Ratio vs rf=4.5%</td><td><code>(ret − rf) / vol</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="correlacion">
+      <div class="endpoint-card">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/correlacion</span>
+          <span class="endpoint-desc">Matriz de correlación de retornos</span>
+        </div>
+        <div class="endpoint-body">
+          <p>Devuelve la matriz de correlación de retornos logarítmicos diarios entre todos los tickers, normalizados a USD. Resultado cacheado 15 minutos.</p>
+          <p><strong>Request body:</strong> mismo formato que <code>/metricas</code>.</p>
+
+          <h4>Respuesta</h4>
+          <pre><code>{
+  <span class="key">"source"</span>: <span class="str">"live"</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"SCHD"</span>:     { <span class="key">"SCHD"</span>: <span class="num">1.00</span>, <span class="key">"DGRO"</span>: <span class="num">0.91</span>, <span class="key">"COPEC.SN"</span>: <span class="num">0.12</span> },
+    <span class="key">"DGRO"</span>:     { <span class="key">"SCHD"</span>: <span class="num">0.91</span>, <span class="key">"DGRO"</span>: <span class="num">1.00</span>, <span class="key">"COPEC.SN"</span>: <span class="num">0.10</span> },
+    <span class="key">"COPEC.SN"</span>: { <span class="key">"SCHD"</span>: <span class="num">0.12</span>, <span class="key">"DGRO"</span>: <span class="num">0.10</span>, <span class="key">"COPEC.SN"</span>: <span class="num">1.00</span> }
+  }
+}</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+
+          <h4>Interpretación</h4>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Rango</th><th>Significado para la cartera</th></tr></thead>
+              <tbody>
+                <tr><td><span class="badge badge-red">0.9 – 1.0</span></td><td>Activos prácticamente idénticos — sin diversificación</td></tr>
+                <tr><td><span class="badge badge-yellow">0.5 – 0.9</span></td><td>Correlación moderada — diversificación parcial</td></tr>
+                <tr><td><span class="badge badge-blue">0.0 – 0.5</span></td><td>Baja correlación — buena diversificación</td></tr>
+                <tr><td><span class="badge badge-green">&lt; 0.0</span></td><td>Correlación negativa — diversificación óptima</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- yfinance fields -->
+    <section id="yfinance-fields">
+      <h2>Campos disponibles en yfinance</h2>
+      <p>La API expone un subconjunto de los datos disponibles. A continuación el inventario completo de <code>yf.Ticker(ticker).info</code> que puede incorporarse en versiones futuras.</p>
+
+      <div class="fields-grid">
+        <div class="field-group">
+          <h4>Precio y volumen</h4>
+          <div class="field-item"><span class="field-name">currentPrice</span><span class="field-desc">Precio actual</span></div>
+          <div class="field-item"><span class="field-name">previousClose</span><span class="field-desc">Cierre anterior</span></div>
+          <div class="field-item"><span class="field-name">open</span><span class="field-desc">Apertura del día</span></div>
+          <div class="field-item"><span class="field-name">dayHigh / dayLow</span><span class="field-desc">Máx/mín del día</span></div>
+          <div class="field-item"><span class="field-name">52WeekHigh/Low</span><span class="field-desc">Rango 52 semanas</span></div>
+          <div class="field-item"><span class="field-name">fiftyDayAverage</span><span class="field-desc">Media móvil 50 días</span></div>
+          <div class="field-item"><span class="field-name">twoHundredDayAverage</span><span class="field-desc">Media móvil 200 días</span></div>
+          <div class="field-item"><span class="field-name">volume / averageVolume</span><span class="field-desc">Volumen actual y promedio</span></div>
+          <div class="field-item"><span class="field-name">marketCap</span><span class="field-desc">Capitalización de mercado</span></div>
+        </div>
+        <div class="field-group">
+          <h4>Dividendos</h4>
+          <div class="field-item"><span class="field-name">dividendYield</span><span class="field-desc">Yield actual en %</span></div>
+          <div class="field-item"><span class="field-name">dividendRate</span><span class="field-desc">Dividendo anual por acción</span></div>
+          <div class="field-item"><span class="field-name">exDividendDate</span><span class="field-desc">Fecha ex-dividendo</span></div>
+          <div class="field-item"><span class="field-name">lastDividendValue</span><span class="field-desc">Último dividendo pagado</span></div>
+          <div class="field-item"><span class="field-name">lastDividendDate</span><span class="field-desc">Fecha último dividendo</span></div>
+          <div class="field-item"><span class="field-name">payoutRatio</span><span class="field-desc">% earnings como dividendo</span></div>
+          <div class="field-item"><span class="field-name">fiveYearAvgDivYield</span><span class="field-desc">Yield promedio 5 años</span></div>
+        </div>
+        <div class="field-group">
+          <h4>Valoración</h4>
+          <div class="field-item"><span class="field-name">trailingPE</span><span class="field-desc">PER trailing 12m</span></div>
+          <div class="field-item"><span class="field-name">forwardPE</span><span class="field-desc">PER forward estimado</span></div>
+          <div class="field-item"><span class="field-name">priceToBook</span><span class="field-desc">Precio / Valor en libros</span></div>
+          <div class="field-item"><span class="field-name">priceToSalesTrailing12M</span><span class="field-desc">Precio / Ventas 12m</span></div>
+          <div class="field-item"><span class="field-name">enterpriseValue</span><span class="field-desc">Valor empresa (EV)</span></div>
+          <div class="field-item"><span class="field-name">enterpriseToRevenue</span><span class="field-desc">EV / Ingresos</span></div>
+          <div class="field-item"><span class="field-name">enterpriseToEbitda</span><span class="field-desc">EV / EBITDA</span></div>
+          <div class="field-item"><span class="field-name">pegRatio</span><span class="field-desc">PER / crecimiento earnings</span></div>
+        </div>
+        <div class="field-group">
+          <h4>Rentabilidad y márgenes</h4>
+          <div class="field-item"><span class="field-name">profitMargins</span><span class="field-desc">Margen neto</span></div>
+          <div class="field-item"><span class="field-name">grossMargins</span><span class="field-desc">Margen bruto</span></div>
+          <div class="field-item"><span class="field-name">operatingMargins</span><span class="field-desc">Margen operacional</span></div>
+          <div class="field-item"><span class="field-name">ebitdaMargins</span><span class="field-desc">Margen EBITDA</span></div>
+          <div class="field-item"><span class="field-name">returnOnAssets</span><span class="field-desc">ROA</span></div>
+          <div class="field-item"><span class="field-name">returnOnEquity</span><span class="field-desc">ROE</span></div>
+        </div>
+        <div class="field-group">
+          <h4>Balance y deuda</h4>
+          <div class="field-item"><span class="field-name">totalCash</span><span class="field-desc">Caja total</span></div>
+          <div class="field-item"><span class="field-name">totalDebt</span><span class="field-desc">Deuda total</span></div>
+          <div class="field-item"><span class="field-name">debtToEquity</span><span class="field-desc">Deuda / Patrimonio</span></div>
+          <div class="field-item"><span class="field-name">currentRatio</span><span class="field-desc">Ratio corriente</span></div>
+          <div class="field-item"><span class="field-name">quickRatio</span><span class="field-desc">Prueba ácida</span></div>
+          <div class="field-item"><span class="field-name">freeCashflow</span><span class="field-desc">Free cash flow</span></div>
+        </div>
+        <div class="field-group">
+          <h4>Analistas</h4>
+          <div class="field-item"><span class="field-name">targetHighPrice</span><span class="field-desc">Precio objetivo alto</span></div>
+          <div class="field-item"><span class="field-name">targetLowPrice</span><span class="field-desc">Precio objetivo bajo</span></div>
+          <div class="field-item"><span class="field-name">targetMeanPrice</span><span class="field-desc">Precio objetivo promedio</span></div>
+          <div class="field-item"><span class="field-name">recommendationMean</span><span class="field-desc">Score 1-5 (1=Compra fuerte)</span></div>
+          <div class="field-item"><span class="field-name">recommendationKey</span><span class="field-desc">"buy", "hold", "sell"</span></div>
+          <div class="field-item"><span class="field-name">numberOfAnalystOpinions</span><span class="field-desc">N° analistas cubriendo</span></div>
+        </div>
+      </div>
+
+      <h3>Métodos adicionales de yf.Ticker</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Método</th><th>Descripción</th></tr></thead>
+          <tbody>
+            <tr><td><code>.history()</code></td><td>Serie histórica OHLCV completa con dividendos y splits</td></tr>
+            <tr><td><code>.dividends</code></td><td>Historial completo de dividendos pagados</td></tr>
+            <tr><td><code>.splits</code></td><td>Historial de splits de acciones</td></tr>
+            <tr><td><code>.financials</code></td><td>Estado de resultados anual</td></tr>
+            <tr><td><code>.quarterly_financials</code></td><td>Estado de resultados trimestral</td></tr>
+            <tr><td><code>.balance_sheet</code></td><td>Balance general anual</td></tr>
+            <tr><td><code>.cashflow</code></td><td>Flujo de caja anual</td></tr>
+            <tr><td><code>.institutional_holders</code></td><td>Tenedores institucionales</td></tr>
+            <tr><td><code>.major_holders</code></td><td>Accionistas mayoritarios</td></tr>
+            <tr><td><code>.options</code></td><td>Cadena de opciones disponibles</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Restrictions -->
+    <section id="restrictions">
+      <h2>Restricciones y limitaciones</h2>
+      <h3>Yahoo Finance (fuente de datos)</h3>
+      <div class="restriction-grid">
+        <div class="restriction-card">
+          <div class="icon">⚡</div>
+          <h4>Rate Limiting</h4>
+          <p>No documentado oficialmente. Exceder ~2.000 requests/hora por IP puede resultar en bloqueo temporal (HTTP 429 o 401).</p>
+        </div>
+        <div class="restriction-card">
+          <div class="icon">🔑</div>
+          <h4>Sin API Key oficial</h4>
+          <p>yfinance hace scraping de Yahoo Finance. No hay SLA ni garantía de disponibilidad continua.</p>
+        </div>
+        <div class="restriction-card">
+          <div class="icon">🕐</div>
+          <h4>Datos con retraso</h4>
+          <p>Precios en tiempo real solo para USA en horario de mercado. Chile (S&P CLX) puede tener retraso de 15–20 min.</p>
+        </div>
+        <div class="restriction-card">
+          <div class="icon">📉</div>
+          <h4>Tickers deslistados</h4>
+          <p><code>.info</code> puede devolver <code>{}</code> o lanzar excepción para activos suspendidos o delisted.</p>
+        </div>
+        <div class="restriction-card">
+          <div class="icon">🇨🇱</div>
+          <h4>Cobertura IPSA</h4>
+          <p>No todos los activos del IPSA tienen datos completos. Activos con baja liquidez pueden tener gaps en la serie histórica.</p>
+        </div>
+        <div class="restriction-card">
+          <div class="icon">null</div>
+          <h4>Campos nulos</h4>
+          <p><code>trailingPE</code>, <code>forwardPE</code> pueden ser <code>null</code> para ETFs, fondos o activos sin earnings reportados.</p>
+        </div>
+      </div>
+
+      <h3>Esta API</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Restricción</th><th>Detalle</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Máx. 20 tickers / request</strong></td><td>Límite de diseño para evitar timeouts. Cada ticker agrega ~0.2s de espera por rate limiting</td></tr>
+            <tr><td><strong>Caché 15 minutos</strong></td><td>Dos requests idénticos en 15 min devuelven el mismo dato. El campo <code>source</code> indica si es <code>"cache"</code> o <code>"live"</code></td></tr>
+            <tr><td><strong>Caché volátil</strong></td><td>Vive en memoria del proceso. Un reinicio del servidor (deploy, crash) la borra completamente</td></tr>
+            <tr><td><strong>Sin datos intraday</strong></td><td>Pipeline usa <code>interval="1d"</code>. No apto para estrategias intraday</td></tr>
+            <tr><td><strong>Tasa libre fija</strong></td><td>Sharpe calculado con rf=4.5% hardcodeada en el servidor. No se actualiza automáticamente</td></tr>
+            <tr><td><strong>Latencia variable</strong></td><td>Un request de 20 tickers en frío puede tardar 15–25 segundos. Con caché, respuesta inmediata</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tests -->
+    <section id="tests">
+      <h2>Suite de pruebas</h2>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">1</div><div class="test-title">Health check</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s</span> https://yfinance-api-prod.up.railway.app/health</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> <code>{"status":"ok","timestamp":"..."}</code> HTTP 200</div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">2</div><div class="test-title">Autenticación — key válida</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "AAPL"}], "periodo": "1mo"}'</span></code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> HTTP 200 con <code>"source":"live","data":[{...}]</code></div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">3</div><div class="test-title">Autenticación — key inválida</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: clave-incorrecta"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "AAPL"}]}'</span></code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> HTTP 403 con <code>{"detail":"API Key inválida"}</code></div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">4</div><div class="test-title">Un ticker USA</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "SCHD", "mercado": "USA"}], "periodo": "1y"}'</span> \
+  | python3 -m json.tool</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> SCHD con <code>sharpe_ratio &gt; 0</code>, <code>dividend_yield_pct ~3.3</code></div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">5</div><div class="test-title">Cartera mixta USA + Chile</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{
+    "tickers": [
+      {"ticker": "SCHD", "mercado": "USA"},
+      {"ticker": "DGRO", "mercado": "USA"},
+      {"ticker": "JEPQ", "mercado": "USA"},
+      {"ticker": "COPEC", "mercado": "CHILE"},
+      {"ticker": "CENCOSUD", "mercado": "CHILE"}
+    ],
+    "periodo": "1y"
+  }'</span> | python3 -m json.tool</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> <code>tickers_procesados: 5</code>, activos CLP normalizados a USD</div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">6</div><div class="test-title">Correlación de cartera</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/correlacion \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{
+    "tickers": [
+      {"ticker": "SCHD", "mercado": "USA"},
+      {"ticker": "DGRO", "mercado": "USA"},
+      {"ticker": "COPEC", "mercado": "CHILE"}
+    ],
+    "periodo": "1y"
+  }'</span> | python3 -m json.tool</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> Matriz 3×3 con diagonal = <code>1.0</code></div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">7</div><div class="test-title">Validación — exceder límite de 20 tickers</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [
+    {"ticker":"AAPL"},{"ticker":"MSFT"},{"ticker":"GOOG"},{"ticker":"AMZN"},
+    {"ticker":"META"},{"ticker":"NVDA"},{"ticker":"TSLA"},{"ticker":"BRK-B"},
+    {"ticker":"JPM"},{"ticker":"V"},{"ticker":"UNH"},{"ticker":"XOM"},
+    {"ticker":"JNJ"},{"ticker":"WMT"},{"ticker":"PG"},{"ticker":"MA"},
+    {"ticker":"HD"},{"ticker":"CVX"},{"ticker":"MRK"},{"ticker":"ABBV"},
+    {"ticker":"EXTRA"}
+  ]}'</span></code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> HTTP 422 Unprocessable Entity</div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">8</div><div class="test-title">Verificar caché</div></div>
+        <div class="test-body">
+          <pre><code><span class="cmt"># Primer request → live</span>
+<span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "AAPL"}], "periodo": "1y"}'</span>
+
+<span class="cmt"># Segundo request inmediato → cache</span>
+<span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "AAPL"}], "periodo": "1y"}'</span></code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> 1° request <code>"source":"live"</code> — 2° request <code>"source":"cache"</code></div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">9</div><div class="test-title">Ticker inválido o inexistente</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "TICKERINEXISTENTE123"}], "periodo": "1y"}'</span></code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> <code>{"source":"live","data":[],"tickers_procesados":0}</code></div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">10</div><div class="test-title">Período máximo histórico</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "SCHD"}], "periodo": "max"}'</span> \
+  | python3 -m json.tool</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> Métricas calculadas desde 2011 (inicio de SCHD)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Integration notes -->
+    <section id="integration">
+      <h2>Integración con sistema de alertas</h2>
+
+      <div class="alert-note">
+        <strong>Campo source:</strong> Usar <code>"source": "cache"</code> para saber si el dato tiene hasta 15 min de antigüedad. Para alertas críticas, esperar la próxima ventana <code>"live"</code>.
+      </div>
+      <div class="alert-note">
+        <strong>Polling eficiente:</strong> Con frecuencia menor a 15 min, el segundo request siempre es <code>cache</code> — no consume quota de Yahoo Finance.
+      </div>
+      <div class="alert-note">
+        <strong>Tickers fallidos:</strong> Si un ticker no aparece en <code>data</code>, verificar siempre <code>tickers_procesados</code> vs cantidad enviada. Ausencia silenciosa indica fallo de red, delisting o ticker inválido.
+      </div>
+      <div class="alert-note">
+        <strong>Sharpe negativo:</strong> <code>sharpe_ratio &lt; 0</code> (como <code>COPEC.SN = -0.10</code>) indica retorno histórico inferior a la tasa libre de riesgo — señal directa para el motor de alertas.
+      </div>
+      <div class="alert-note">
+        <strong>Correlación alta:</strong> Pares con correlación <code>&gt; 0.85</code> son candidatos a reducir posición en uno — la cartera no se beneficia de tener ambos.
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  function copy(btn) {
+    const code = btn.closest('pre').querySelector('code').innerText;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.textContent = '✓';
+      setTimeout(() => btn.textContent = 'copiar', 1500);
+    });
+  }
+
+  // Active nav link on scroll
+  const sections = document.querySelectorAll('section[id], div.hero');
+  const navLinks = document.querySelectorAll('nav a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
