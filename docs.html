@@ -339,6 +339,7 @@
     <div class="nav-section">Endpoints</div>
     <a href="#health">GET /health</a>
     <a href="#metricas">POST /metricas</a>
+    <a href="#historia">POST /historia</a>
     <a href="#correlacion">POST /correlacion</a>
     <div class="nav-section">Referencia</div>
     <a href="#yfinance-fields">Campos yfinance</a>
@@ -505,6 +506,72 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="historia">
+      <div class="endpoint-card">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/historia</span>
+          <span class="endpoint-desc">Serie OHLCV diaria para un ticker</span>
+        </div>
+        <div class="endpoint-body">
+          <p>Devuelve la serie histórica OHLCV diaria para un único ticker. Los precios están ajustados por dividendos y splits. Útil para generación de gráficos de velas o línea. Resultado cacheado 15 minutos.</p>
+
+          <h4>Request Body</h4>
+          <pre><code>{
+  <span class="key">"ticker"</span>:  <span class="str">"SCHD"</span>,
+  <span class="key">"mercado"</span>: <span class="str">"USA"</span>,   <span class="cmt">// "USA" (default) o "CHILE"</span>
+  <span class="key">"periodo"</span>: <span class="str">"1mo"</span>    <span class="cmt">// default: "1mo"</span>
+}</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+
+          <h4>Parámetros</h4>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Campo</th><th>Tipo</th><th>Requerido</th><th>Descripción</th></tr></thead>
+              <tbody>
+                <tr><td><code>ticker</code></td><td>string</td><td><span class="badge badge-red">Sí</span></td><td>Símbolo del activo</td></tr>
+                <tr><td><code>mercado</code></td><td>string</td><td><span class="badge badge-blue">No</span></td><td><code>"USA"</code> (default) o <code>"CHILE"</code></td></tr>
+                <tr><td><code>periodo</code></td><td>string</td><td><span class="badge badge-blue">No</span></td><td>Período histórico. Default: <code>"1mo"</code>. Mismos valores que <code>/metricas</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Respuesta</h4>
+          <pre><code>{
+  <span class="key">"source"</span>:  <span class="str">"live"</span>,
+  <span class="key">"ticker"</span>:  <span class="str">"SCHD"</span>,
+  <span class="key">"periodo"</span>: <span class="str">"1mo"</span>,
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"fecha"</span>:  <span class="str">"2026-05-01"</span>,
+      <span class="key">"open"</span>:   <span class="num">31.80</span>,
+      <span class="key">"high"</span>:   <span class="num">32.10</span>,
+      <span class="key">"low"</span>:    <span class="num">31.65</span>,
+      <span class="key">"close"</span>:  <span class="num">32.00</span>,
+      <span class="key">"volume"</span>: <span class="num">18500000</span>
+    },
+    <span class="cmt">// ... un objeto por día de mercado</span>
+  ]
+}</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+
+          <h4>Campos de respuesta</h4>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+              <tbody>
+                <tr><td><code>fecha</code></td><td>Fecha en formato <code>YYYY-MM-DD</code></td></tr>
+                <tr><td><code>open</code></td><td>Precio de apertura ajustado</td></tr>
+                <tr><td><code>high</code></td><td>Precio máximo del día ajustado</td></tr>
+                <tr><td><code>low</code></td><td>Precio mínimo del día ajustado</td></tr>
+                <tr><td><code>close</code></td><td>Precio de cierre ajustado</td></tr>
+                <tr><td><code>volume</code></td><td>Volumen negociado</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:0.75rem"><strong>Nota:</strong> Para activos chilenos (<code>mercado: "CHILE"</code>), los precios se devuelven en CLP — sin conversión a USD. Este endpoint entrega los datos crudos para graficar.</p>
         </div>
       </div>
     </section>
@@ -754,7 +821,31 @@
       </div>
 
       <div class="test-card">
-        <div class="test-header"><div class="test-num">6</div><div class="test-title">Correlación de cartera</div></div>
+        <div class="test-header"><div class="test-num">6</div><div class="test-title">Historia OHLCV — ticker USA</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/historia \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"ticker": "SCHD", "mercado": "USA", "periodo": "1mo"}'</span> \
+  | python3 -m json.tool</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> Array con ~22 objetos <code>{fecha, open, high, low, close, volume}</code></div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">7</div><div class="test-title">Historia OHLCV — activo chileno</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/historia \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"ticker": "COPEC", "mercado": "CHILE", "periodo": "1mo"}'</span> \
+  | python3 -m json.tool</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> Precios en CLP (ej: <code>close ~6100</code>), ticker formateado como <code>COPEC.SN</code></div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">8</div><div class="test-title">Correlación de cartera</div></div>
         <div class="test-body">
           <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/correlacion \
   <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
@@ -772,7 +863,7 @@
       </div>
 
       <div class="test-card">
-        <div class="test-header"><div class="test-num">7</div><div class="test-title">Validación — exceder límite de 20 tickers</div></div>
+        <div class="test-header"><div class="test-num">9</div><div class="test-title">Validación — exceder límite de 20 tickers</div></div>
         <div class="test-body">
           <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
   <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
@@ -790,7 +881,7 @@
       </div>
 
       <div class="test-card">
-        <div class="test-header"><div class="test-num">8</div><div class="test-title">Verificar caché</div></div>
+        <div class="test-header"><div class="test-num">10</div><div class="test-title">Verificar caché</div></div>
         <div class="test-body">
           <pre><code><span class="cmt"># Primer request → live</span>
 <span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
@@ -808,7 +899,7 @@
       </div>
 
       <div class="test-card">
-        <div class="test-header"><div class="test-num">9</div><div class="test-title">Ticker inválido o inexistente</div></div>
+        <div class="test-header"><div class="test-num">11</div><div class="test-title">Ticker inválido o inexistente</div></div>
         <div class="test-body">
           <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
   <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
@@ -819,7 +910,7 @@
       </div>
 
       <div class="test-card">
-        <div class="test-header"><div class="test-num">10</div><div class="test-title">Período máximo histórico</div></div>
+        <div class="test-header"><div class="test-num">12</div><div class="test-title">Período máximo histórico</div></div>
         <div class="test-body">
           <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
   <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \

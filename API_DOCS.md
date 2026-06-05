@@ -112,6 +112,57 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
 
 ---
 
+### `POST /historia`
+
+Devuelve la serie OHLCV diaria para un único ticker. Útil para generación de gráficos de velas o línea. Resultado cacheado 15 minutos.
+
+**Request body:**
+```json
+{
+  "ticker": "SCHD",
+  "mercado": "USA",
+  "periodo": "1mo"
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `ticker` | string | Sí | Símbolo del activo |
+| `mercado` | string | No | `"USA"` (default) o `"CHILE"` |
+| `periodo` | string | No | Período histórico. Default: `"1mo"` |
+
+**Períodos válidos:** mismos que `/metricas` (`1d`, `5d`, `1mo`, `3mo`, `6mo`, `1y`, `2y`, `5y`, `10y`, `ytd`, `max`).
+
+**Respuesta:**
+```json
+{
+  "source": "live",
+  "ticker": "SCHD",
+  "periodo": "1mo",
+  "data": [
+    {
+      "fecha": "2026-05-01",
+      "open":  31.80,
+      "high":  32.10,
+      "low":   31.65,
+      "close": 32.00,
+      "volume": 18500000
+    }
+  ]
+}
+```
+
+| Campo | Descripción |
+|-------|-------------|
+| `fecha` | Fecha en formato `YYYY-MM-DD` |
+| `open` | Precio de apertura ajustado |
+| `high` | Precio máximo del día ajustado |
+| `low` | Precio mínimo del día ajustado |
+| `close` | Precio de cierre ajustado |
+| `volume` | Volumen negociado |
+
+---
+
 ### `POST /correlacion`
 
 Devuelve la matriz de correlación de retornos logarítmicos diarios entre todos los tickers del request, normalizados a USD. Resultado cacheado 15 minutos.
@@ -321,7 +372,31 @@ curl -s -X POST https://yfinance-api-prod.up.railway.app/metricas \
 
 ---
 
-### 6. Correlación de cartera
+### 6. Historia OHLCV — un ticker
+```bash
+curl -s -X POST https://yfinance-api-prod.up.railway.app/historia \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk" \
+  -d '{"ticker": "SCHD", "mercado": "USA", "periodo": "1mo"}' \
+  | python3 -m json.tool
+```
+**Resultado esperado:** array de objetos `{fecha, open, high, low, close, volume}` con ~22 registros
+
+---
+
+### 7. Historia OHLCV — activo chileno
+```bash
+curl -s -X POST https://yfinance-api-prod.up.railway.app/historia \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk" \
+  -d '{"ticker": "COPEC", "mercado": "CHILE", "periodo": "1mo"}' \
+  | python3 -m json.tool
+```
+**Resultado esperado:** precios en CLP (no normalizados a USD en este endpoint)
+
+---
+
+### 8. Correlación de cartera
 ```bash
 curl -s -X POST https://yfinance-api-prod.up.railway.app/correlacion \
   -H "Content-Type: application/json" \
