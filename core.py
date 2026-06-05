@@ -109,6 +109,33 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
     return metricas_activos
 
 
+def obtener_historia(ticker: str, mercado: str = "USA", periodo: str = "1mo") -> list[dict]:
+    """
+    Devuelve la serie OHLCV diaria para un ticker.
+    Fechas como string ISO para serialización JSON directa.
+    """
+    ticker_fmt = estructurar_ticker(ticker, mercado)
+    try:
+        df = yf.Ticker(ticker_fmt).history(period=periodo, auto_adjust=True)
+        if df.empty:
+            return []
+        df.index = df.index.strftime("%Y-%m-%d")
+        return [
+            {
+                "fecha": fecha,
+                "open":   round(float(row["Open"]), 4),
+                "high":   round(float(row["High"]), 4),
+                "low":    round(float(row["Low"]), 4),
+                "close":  round(float(row["Close"]), 4),
+                "volume": int(row["Volume"]),
+            }
+            for fecha, row in df.iterrows()
+        ]
+    except Exception as e:
+        print(f"[ERROR] historia {ticker_fmt}: {type(e).__name__}: {e}")
+        return []
+
+
 def obtener_correlacion(tickers: list[dict], periodo: str = "1y") -> dict:
     """
     Calcula matriz de correlación de retornos logarítmicos normalizados a USD.

@@ -7,7 +7,7 @@ from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, Field
 import os
 
-from core import obtener_metricas, obtener_correlacion
+from core import obtener_metricas, obtener_correlacion, obtener_historia
 
 # --- Auth ---
 API_KEY = os.environ.get("API_KEY", "")
@@ -69,6 +69,29 @@ def metricas(body: ConsultaRequest):
     resultado = obtener_metricas(tickers_dict, body.periodo)
     cache_set(cache_key, resultado)
     return {"source": "live", "data": resultado, "tickers_procesados": len(resultado)}
+
+class HistoriaRequest(BaseModel):
+    ticker: str
+    mercado: str = "USA"
+    periodo: str = "1mo"
+
+
+@app.post("/historia", dependencies=[Depends(verificar_api_key)])
+def historia(body: HistoriaRequest):
+    """
+    Devuelve serie OHLCV diaria para un ticker.
+    Útil para generación de gráficos de velas o línea.
+    Resultado cacheado 15 minutos.
+    """
+    cache_key = f"historia:{body.ticker}:{body.mercado}:{body.periodo}"
+    cached = cache_get(cache_key)
+    if cached:
+        return {"source": "cache", "ticker": body.ticker, "periodo": body.periodo, "data": cached}
+
+    resultado = obtener_historia(body.ticker, body.mercado, body.periodo)
+    cache_set(cache_key, resultado)
+    return {"source": "live", "ticker": body.ticker, "periodo": body.periodo, "data": resultado}
+
 
 @app.post("/correlacion", dependencies=[Depends(verificar_api_key)])
 def correlacion(body: ConsultaRequest):
