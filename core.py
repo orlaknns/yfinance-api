@@ -51,6 +51,33 @@ def _normalizar_dividend_yield(ticker: str, valor: float | None) -> float:
     return valor
 
 
+def _convertir_financials_a_moneda_precio(info: dict, ebitda: float | None, fcf: float | None,
+                                            tc_usdclp_actual: float | None) -> tuple[float | None, float | None, str | None]:
+    """
+    Algunos tickers (ej. COPEC.SN) reportan `currency` (precio/EV) distinto de
+    `financialCurrency` (ebitda/FCF/revenue) — verificado con COPEC: currency=CLP
+    pero financialCurrency=USD, lo que hacía que ev_to_ebitda saliera en ~4169x
+    en vez de ~4.5x al dividir un enterpriseValue en CLP por un ebitda en USD.
+    Si se detecta el mismatch, se convierte ebitda/fcf a la moneda de `currency`
+    usando el tipo de cambio CLPUSD=X ya descargado para normalizar precios,
+    y se devuelve el nombre de la moneda original para informar el ajuste.
+    Solo soporta el par CLP/USD, que es el único cruce relevante en esta API.
+    """
+    moneda_precio = info.get("currency")
+    moneda_financiera = info.get("financialCurrency")
+
+    if not moneda_precio or not moneda_financiera or moneda_precio == moneda_financiera:
+        return ebitda, fcf, None
+
+    if moneda_precio == "CLP" and moneda_financiera == "USD" and tc_usdclp_actual:
+        factor = 1 / tc_usdclp_actual  # 1 USD = factor CLP
+        ebitda_conv = ebitda * factor if ebitda is not None else None
+        fcf_conv = fcf * factor if fcf is not None else None
+        return ebitda_conv, fcf_conv, f"{moneda_financiera}->{moneda_precio}"
+
+    return ebitda, fcf, None
+
+
 def _obtener_free_cash_flow(yf_ticker: "yf.Ticker") -> float | None:
     """
     info["freeCashflow"] de yfinance resultó no confiable (verificado en MSFT:
@@ -134,6 +161,14 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
             if fcf is None:
                 fcf = info.get("freeCashflow")
 
+            tc_actual = float(tc_usdclp.iloc[-1]) if tc_usdclp is not None and not tc_usdclp.empty else None
+            ebitda, fcf, fx_ajuste = _convertir_financials_a_moneda_precio(info, ebitda, fcf, tc_actual)
+
+            ev_to_ebitda = info.get("enterpriseToEbitda")
+            if fx_ajuste and ebitda:
+                enterprise_value = info.get("enterpriseValue")
+                ev_to_ebitda = round(enterprise_value / ebitda, 3) if enterprise_value else None
+
             metricas_activos.append({
                 "ticker": ticker,
                 "nombre": info.get("longName"),
@@ -142,11 +177,12 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
                 "dividend_yield_pct": round(_normalizar_dividend_yield(ticker, info.get("dividendYield")), 2),
                 "trailing_per": info.get("trailingPE"),
                 "forward_per": info.get("forwardPE"),
-                "ev_to_ebitda": info.get("enterpriseToEbitda"),
+                "ev_to_ebitda": ev_to_ebitda,
                 "roe_pct": round(roe * 100, 2) if roe is not None else None,
                 "ebitda": ebitda,
                 "free_cash_flow": fcf,
                 "payout_ratio_pct": round(payout_ratio * 100, 2) if payout_ratio is not None else None,
+                "fx_ajuste_financiero": fx_ajuste,
                 "retorno_anualizado_pct": round(retorno_anualizado * 100, 2),
                 "volatilidad_anualizada_pct": round(volatilidad_anualizada * 100, 2),
                 "sharpe_ratio": round(sharpe, 2) if sharpe is not None else None,

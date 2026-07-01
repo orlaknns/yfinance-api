@@ -486,6 +486,7 @@
       <span class="key">"ebitda"</span>: <span class="num">184457003008</span>,
       <span class="key">"free_cash_flow"</span>: <span class="num">71611000000</span>,
       <span class="key">"payout_ratio_pct"</span>: <span class="num">20.73</span>,
+      <span class="key">"fx_ajuste_financiero"</span>: <span class="kw">null</span>,
       <span class="key">"retorno_anualizado_pct"</span>: <span class="num">-23.92</span>,
       <span class="key">"volatilidad_anualizada_pct"</span>: <span class="num">27.36</span>,
       <span class="key">"sharpe_ratio"</span>: <span class="num">-1.04</span>
@@ -507,11 +508,12 @@
                 <tr><td><code>dividend_yield_pct</code></td><td>Dividend yield en % (ej: 3.29 = 3.29%)</td><td><code>info.dividendYield</code></td></tr>
                 <tr><td><code>trailing_per</code></td><td>P/E ratio trailing 12 meses</td><td><code>info.trailingPE</code></td></tr>
                 <tr><td><code>forward_per</code></td><td>P/E ratio forward (estimado)</td><td><code>info.forwardPE</code></td></tr>
-                <tr><td><code>ev_to_ebitda</code></td><td>Enterprise Value / EBITDA</td><td><code>info.enterpriseToEbitda</code></td></tr>
+                <tr><td><code>ev_to_ebitda</code></td><td>Enterprise Value / EBITDA (recalculado si hubo <code>fx_ajuste_financiero</code>)</td><td><code>info.enterpriseToEbitda</code></td></tr>
                 <tr><td><code>roe_pct</code></td><td>Return on Equity en %</td><td><code>info.returnOnEquity</code></td></tr>
-                <tr><td><code>ebitda</code></td><td>EBITDA en moneda original del activo</td><td><code>info.ebitda</code></td></tr>
-                <tr><td><code>free_cash_flow</code></td><td>Free Cash Flow en moneda original del activo (año fiscal más reciente)</td><td><code>Ticker.cashflow</code>, fallback <code>info.freeCashflow</code></td></tr>
+                <tr><td><code>ebitda</code></td><td>EBITDA en moneda de <code>moneda</code> (ver <code>fx_ajuste_financiero</code>)</td><td><code>info.ebitda</code></td></tr>
+                <tr><td><code>free_cash_flow</code></td><td>Free Cash Flow en moneda de <code>moneda</code> (año fiscal más reciente, ver <code>fx_ajuste_financiero</code>)</td><td><code>Ticker.cashflow</code>, fallback <code>info.freeCashflow</code></td></tr>
                 <tr><td><code>payout_ratio_pct</code></td><td>% de utilidades pagado como dividendo</td><td><code>info.payoutRatio</code></td></tr>
+                <tr><td><code>fx_ajuste_financiero</code></td><td><code>null</code> o <code>"USD->CLP"</code> si <code>ebitda</code>/<code>free_cash_flow</code>/<code>ev_to_ebitda</code> fueron convertidos por mismatch de moneda</td><td>Calculado</td></tr>
                 <tr><td><code>retorno_anualizado_pct</code></td><td>Retorno anualizado histórico en %</td><td><code>log_ret.mean() × 252</code></td></tr>
                 <tr><td><code>volatilidad_anualizada_pct</code></td><td>Volatilidad anualizada en %</td><td><code>log_ret.std() × √252</code></td></tr>
                 <tr><td><code>sharpe_ratio</code></td><td>Sharpe Ratio vs rf=4.5%</td><td><code>(ret − rf) / vol</code></td></tr>
@@ -522,6 +524,7 @@
           <div class="expected"><strong>⚠️ Nota →</strong> <code>free_cash_flow</code> se calcula desde <code>Ticker.cashflow.loc["Free Cash Flow"]</code> (año fiscal más reciente), no desde <code>info.freeCashflow</code>. Se detectó que este último subestimaba el FCF real (ej: MSFT ~$37B vs ~$71.6B del cashflow statement, casi 2x de diferencia). Fallback a <code>info.freeCashflow</code> solo si el ticker no tiene cashflow statement (ETFs, fondos).</div>
           <div class="expected"><strong>⚠️ Nota — bancos y financieras (ej. JPM) →</strong> <code>ebitda</code> y <code>ev_to_ebitda</code> suelen venir <code>null</code> — yfinance no reporta EBITDA para instituciones financieras porque el concepto no aplica bien a su modelo de negocio. Además <code>free_cash_flow</code> puede aparecer <strong>negativo o con variaciones extremas</strong> entre periodos, ya que el cashflow operativo de un banco incluye movimientos de depósitos, préstamos y trading — no es comparable con el FCF de una empresa no financiera y no indica problema de liquidez.</div>
           <div class="expected"><strong>⚠️ Nota — cierres de año fiscal distintos →</strong> <code>ebitda</code> y <code>free_cash_flow</code> corresponden al año fiscal más reciente de cada empresa, y no todas cierran en la misma fecha. Verificado con AVGO (cierra 31-oct) vs NVDA (cierra 31-ene): hay un desfase de ~3 meses entre los cortes, aunque ambos digan "año fiscal más reciente". Al comparar estos campos entre tickers de un mismo sector (ej. semiconductores), considerar que no están sincronizados en el tiempo.</div>
+          <div class="expected"><strong>⚠️ Bug corregido — mismatch de moneda en tickers chilenos (ej. COPEC.SN) →</strong> algunos tickers reportan <code>info.currency</code> (moneda de precio/EV) distinto de <code>info.financialCurrency</code> (moneda de ebitda/FCF/revenue). Verificado con COPEC.SN: <code>currency=CLP</code> pero <code>financialCurrency=USD</code>, lo que hacía que <code>ev_to_ebitda</code> saliera en <strong>~4169x</strong> (dividía un <code>enterpriseValue</code> en CLP por un <code>ebitda</code> en USD) en vez del valor correcto de <strong>~4.5x</strong>. Se detecta el mismatch y se convierte <code>ebitda</code>/<code>free_cash_flow</code> a la moneda de <code>currency</code> usando el tipo de cambio <code>CLPUSD=X</code>, recalculando <code>ev_to_ebitda</code> con el EBITDA ya convertido. El campo <code>fx_ajuste_financiero</code> indica cuándo se aplicó esta conversión (ej. <code>"USD->CLP"</code>).</div>
         </div>
       </div>
     </section>
@@ -975,6 +978,18 @@
   <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "MSFT"}, {"ticker": "SCHD"}, {"ticker": "AAPL"}], "periodo": "1mo"}'</span> \
   | python3 -m json.tool</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
           <div class="expected"><strong>Esperado →</strong> <code>dividend_yield_pct</code> de cada ticker en el rango <code>(0, 20]</code> (ej: MSFT ~0.98, SCHD ~3.25, AAPL ~0.37). Si <code>core.py</code> registra <code>[WARN] dividendYield ... llegó como fracción</code> en logs, significa que yfinance cambió el formato del campo y <code>_normalizar_dividend_yield()</code> lo corrigió automáticamente escalando x100 — revisar logs de Railway tras cada actualización de la librería <code>yfinance</code>.</div>
+        </div>
+      </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">16</div><div class="test-title">Mismatch de moneda financiera en ticker chileno (COPEC)</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "COPEC", "mercado": "CHILE"}, {"ticker": "CENCOSUD", "mercado": "CHILE"}], "periodo": "1y"}'</span> \
+  | python3 -m json.tool</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> COPEC.SN con <code>ev_to_ebitda</code> en rango razonable (~4-6x, no miles como antes del fix) y <code>fx_ajuste_financiero: "USD->CLP"</code>. CENCOSUD.SN con <code>fx_ajuste_financiero: null</code> (su <code>currency</code> y <code>financialCurrency</code> coinciden, sin mismatch).</div>
         </div>
       </div>
     </section>

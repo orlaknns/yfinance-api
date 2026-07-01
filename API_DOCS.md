@@ -94,6 +94,7 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
       "ebitda": 184457003008,
       "free_cash_flow": 71611000000,
       "payout_ratio_pct": 20.73,
+      "fx_ajuste_financiero": null,
       "retorno_anualizado_pct": -23.92,
       "volatilidad_anualizada_pct": 27.36,
       "sharpe_ratio": -1.04
@@ -113,11 +114,12 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
 | `dividend_yield_pct` | Dividend yield en % (ej: 3.29 = 3.29%) | `info.dividendYield` |
 | `trailing_per` | Price/Earnings ratio trailing 12m | `info.trailingPE` |
 | `forward_per` | Price/Earnings ratio forward (estimado) | `info.forwardPE` |
-| `ev_to_ebitda` | Enterprise Value / EBITDA | `info.enterpriseToEbitda` |
+| `ev_to_ebitda` | Enterprise Value / EBITDA | `info.enterpriseToEbitda`, o recalculado si hubo `fx_ajuste_financiero` |
 | `roe_pct` | Return on Equity en % | `info.returnOnEquity` |
-| `ebitda` | EBITDA en moneda original del activo | `info.ebitda` |
-| `free_cash_flow` | Free Cash Flow en moneda original del activo (año fiscal más reciente) | `Ticker.cashflow.loc["Free Cash Flow"]`, fallback a `info.freeCashflow` |
+| `ebitda` | EBITDA en moneda de `moneda` (ver `fx_ajuste_financiero`) | `info.ebitda` |
+| `free_cash_flow` | Free Cash Flow en moneda de `moneda` (año fiscal más reciente, ver `fx_ajuste_financiero`) | `Ticker.cashflow.loc["Free Cash Flow"]`, fallback a `info.freeCashflow` |
 | `payout_ratio_pct` | Porcentaje de utilidades pagado como dividendo | `info.payoutRatio` |
+| `fx_ajuste_financiero` | `null` si no hubo ajuste, o `"USD->CLP"` (formato `"origen->destino"`) si `ebitda`/`free_cash_flow`/`ev_to_ebitda` fueron convertidos por mismatch de moneda | Calculado |
 | `retorno_anualizado_pct` | Retorno anualizado histórico en % | Calculado: `log_ret.mean() * 252` |
 | `volatilidad_anualizada_pct` | Volatilidad anualizada en % | Calculado: `log_ret.std() * √252` |
 | `sharpe_ratio` | Sharpe Ratio vs tasa libre 4.5% | Calculado: `(ret - rf) / vol` |
@@ -129,6 +131,8 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
 **Validación defensiva de `dividend_yield_pct`:** yfinance ha cambiado en el pasado el formato de `info.dividendYield` entre fracción (`0.0329`) y porcentual (`3.29`). `core._normalizar_dividend_yield()` detecta valores en el rango `(0, 0.20)` — inusuales para un yield ya-porcentual pero típicos de una fracción sin convertir — y los escala ×100 automáticamente, registrando `[WARN] dividendYield ... llegó como fracción` en logs. Revisar logs de Railway tras actualizar la versión de `yfinance` en `requirements.txt`.
 
 **Fuente corregida de `free_cash_flow`:** `info.freeCashflow` resultó no confiable — verificado en MSFT devolvía ~$37B vs ~$71.6B del cashflow statement del año fiscal más reciente (~2x de diferencia). `core._obtener_free_cash_flow()` ahora lee `Ticker.cashflow.loc["Free Cash Flow"]` como fuente principal, con fallback a `info.freeCashflow` para activos sin cashflow statement (ETFs, fondos).
+
+**Bug corregido — mismatch de moneda en tickers chilenos (ej. COPEC.SN):** algunos tickers reportan `info.currency` (moneda de precio/EV) distinto de `info.financialCurrency` (moneda de ebitda/FCF/revenue). Verificado con COPEC.SN: `currency=CLP` pero `financialCurrency=USD`, lo que hacía que `ev_to_ebitda` saliera en **~4169x** (dividía un `enterpriseValue` en CLP por un `ebitda` en USD) en vez del valor correcto de **~4.5x**. `core._convertir_financials_a_moneda_precio()` detecta el mismatch y convierte `ebitda`/`free_cash_flow` a la moneda de `currency` usando el tipo de cambio `CLPUSD=X` ya descargado para normalizar precios; `ev_to_ebitda` se recalcula con el EBITDA ya convertido en vez de usar `info.enterpriseToEbitda` directamente. El campo de respuesta `fx_ajuste_financiero` indica cuándo se aplicó esta conversión (ej. `"USD->CLP"`) para que el consumidor sepa que esos valores no vienen directos de yfinance. Solo soporta el cruce CLP/USD, el único relevante en esta API.
 
 **Nota — cierres de año fiscal distintos entre tickers:** `ebitda` y `free_cash_flow` corresponden al año fiscal más reciente reportado por cada empresa, y **no todas cierran en la misma fecha**. Verificado con AVGO (cierra 31-oct) vs NVDA (cierra 31-ene): hay un desfase de ~3 meses entre los cortes de ambos, aunque los dos digan "año fiscal más reciente". Al comparar estos campos entre tickers (ej. para un ranking o screener), considerar que no están sincronizados en el tiempo — es una limitación inherente a cómo yfinance reporta los estados financieros, no un error de la API.
 
