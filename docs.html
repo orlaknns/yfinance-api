@@ -474,21 +474,21 @@
   <span class="key">"tickers_procesados"</span>: <span class="num">2</span>,
   <span class="key">"data"</span>: [
     {
-      <span class="key">"ticker"</span>: <span class="str">"SCHD"</span>,
-      <span class="key">"nombre"</span>: <span class="str">"Schwab U.S. Dividend Equity ETF"</span>,
+      <span class="key">"ticker"</span>: <span class="str">"MSFT"</span>,
+      <span class="key">"nombre"</span>: <span class="str">"Microsoft Corporation"</span>,
       <span class="key">"moneda"</span>: <span class="str">"USD"</span>,
-      <span class="key">"precio_actual"</span>: <span class="num">32.37</span>,
-      <span class="key">"dividend_yield_pct"</span>: <span class="num">3.29</span>,
-      <span class="key">"trailing_per"</span>: <span class="num">19.20</span>,
-      <span class="key">"forward_per"</span>: <span class="num">18.05</span>,
-      <span class="key">"ev_to_ebitda"</span>: <span class="num">12.4</span>,
-      <span class="key">"roe_pct"</span>: <span class="num">14.2</span>,
-      <span class="key">"ebitda"</span>: <span class="num">159975997440</span>,
-      <span class="key">"free_cash_flow"</span>: <span class="num">101090746368</span>,
-      <span class="key">"payout_ratio_pct"</span>: <span class="num">55.3</span>,
-      <span class="key">"retorno_anualizado_pct"</span>: <span class="num">24.79</span>,
-      <span class="key">"volatilidad_anualizada_pct"</span>: <span class="num">10.94</span>,
-      <span class="key">"sharpe_ratio"</span>: <span class="num">1.86</span>
+      <span class="key">"precio_actual"</span>: <span class="num">384.28</span>,
+      <span class="key">"dividend_yield_pct"</span>: <span class="num">0.98</span>,
+      <span class="key">"trailing_per"</span>: <span class="num">22.89</span>,
+      <span class="key">"forward_per"</span>: <span class="num">19.84</span>,
+      <span class="key">"ev_to_ebitda"</span>: <span class="num">15.73</span>,
+      <span class="key">"roe_pct"</span>: <span class="num">34.01</span>,
+      <span class="key">"ebitda"</span>: <span class="num">184457003008</span>,
+      <span class="key">"free_cash_flow"</span>: <span class="num">71611000000</span>,
+      <span class="key">"payout_ratio_pct"</span>: <span class="num">20.73</span>,
+      <span class="key">"retorno_anualizado_pct"</span>: <span class="num">-23.92</span>,
+      <span class="key">"volatilidad_anualizada_pct"</span>: <span class="num">27.36</span>,
+      <span class="key">"sharpe_ratio"</span>: <span class="num">-1.04</span>
     }
   ]
 }</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
@@ -510,7 +510,7 @@
                 <tr><td><code>ev_to_ebitda</code></td><td>Enterprise Value / EBITDA</td><td><code>info.enterpriseToEbitda</code></td></tr>
                 <tr><td><code>roe_pct</code></td><td>Return on Equity en %</td><td><code>info.returnOnEquity</code></td></tr>
                 <tr><td><code>ebitda</code></td><td>EBITDA en moneda original del activo</td><td><code>info.ebitda</code></td></tr>
-                <tr><td><code>free_cash_flow</code></td><td>Free Cash Flow en moneda original del activo</td><td><code>info.freeCashflow</code></td></tr>
+                <tr><td><code>free_cash_flow</code></td><td>Free Cash Flow en moneda original del activo (año fiscal más reciente)</td><td><code>Ticker.cashflow</code>, fallback <code>info.freeCashflow</code></td></tr>
                 <tr><td><code>payout_ratio_pct</code></td><td>% de utilidades pagado como dividendo</td><td><code>info.payoutRatio</code></td></tr>
                 <tr><td><code>retorno_anualizado_pct</code></td><td>Retorno anualizado histórico en %</td><td><code>log_ret.mean() × 252</code></td></tr>
                 <tr><td><code>volatilidad_anualizada_pct</code></td><td>Volatilidad anualizada en %</td><td><code>log_ret.std() × √252</code></td></tr>
@@ -519,6 +519,7 @@
             </table>
           </div>
           <div class="expected"><strong>⚠️ Nota →</strong> <code>forward_per</code>, <code>ev_to_ebitda</code>, <code>roe_pct</code>, <code>ebitda</code>, <code>free_cash_flow</code> y <code>payout_ratio_pct</code> pueden ser <code>null</code> para ETFs, fondos o activos sin esos datos fundamentales publicados.</div>
+          <div class="expected"><strong>⚠️ Nota →</strong> <code>free_cash_flow</code> se calcula desde <code>Ticker.cashflow.loc["Free Cash Flow"]</code> (año fiscal más reciente), no desde <code>info.freeCashflow</code>. Se detectó que este último subestimaba el FCF real (ej: MSFT ~$37B vs ~$71.6B del cashflow statement, casi 2x de diferencia). Fallback a <code>info.freeCashflow</code> solo si el ticker no tiene cashflow statement (ETFs, fondos).</div>
         </div>
       </div>
     </section>

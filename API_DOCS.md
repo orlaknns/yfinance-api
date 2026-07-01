@@ -82,21 +82,21 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
   "tickers_procesados": 2,
   "data": [
     {
-      "ticker": "SCHD",
-      "nombre": "Schwab U.S. Dividend Equity ETF",
+      "ticker": "MSFT",
+      "nombre": "Microsoft Corporation",
       "moneda": "USD",
-      "precio_actual": 32.37,
-      "dividend_yield_pct": 3.29,
-      "trailing_per": 19.20,
-      "forward_per": 18.05,
-      "ev_to_ebitda": 12.4,
-      "roe_pct": 14.2,
-      "ebitda": 159975997440,
-      "free_cash_flow": 101090746368,
-      "payout_ratio_pct": 55.3,
-      "retorno_anualizado_pct": 24.79,
-      "volatilidad_anualizada_pct": 10.94,
-      "sharpe_ratio": 1.86
+      "precio_actual": 384.28,
+      "dividend_yield_pct": 0.98,
+      "trailing_per": 22.89,
+      "forward_per": 19.84,
+      "ev_to_ebitda": 15.73,
+      "roe_pct": 34.01,
+      "ebitda": 184457003008,
+      "free_cash_flow": 71611000000,
+      "payout_ratio_pct": 20.73,
+      "retorno_anualizado_pct": -23.92,
+      "volatilidad_anualizada_pct": 27.36,
+      "sharpe_ratio": -1.04
     }
   ]
 }
@@ -116,7 +116,7 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
 | `ev_to_ebitda` | Enterprise Value / EBITDA | `info.enterpriseToEbitda` |
 | `roe_pct` | Return on Equity en % | `info.returnOnEquity` |
 | `ebitda` | EBITDA en moneda original del activo | `info.ebitda` |
-| `free_cash_flow` | Free Cash Flow en moneda original del activo | `info.freeCashflow` |
+| `free_cash_flow` | Free Cash Flow en moneda original del activo (año fiscal más reciente) | `Ticker.cashflow.loc["Free Cash Flow"]`, fallback a `info.freeCashflow` |
 | `payout_ratio_pct` | Porcentaje de utilidades pagado como dividendo | `info.payoutRatio` |
 | `retorno_anualizado_pct` | Retorno anualizado histórico en % | Calculado: `log_ret.mean() * 252` |
 | `volatilidad_anualizada_pct` | Volatilidad anualizada en % | Calculado: `log_ret.std() * √252` |
@@ -125,6 +125,8 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
 **Nota:** `forward_per`, `ev_to_ebitda`, `roe_pct`, `ebitda`, `free_cash_flow` y `payout_ratio_pct` pueden ser `null` para ETFs, fondos o activos sin esos datos fundamentales publicados.
 
 **Validación defensiva de `dividend_yield_pct`:** yfinance ha cambiado en el pasado el formato de `info.dividendYield` entre fracción (`0.0329`) y porcentual (`3.29`). `core._normalizar_dividend_yield()` detecta valores en el rango `(0, 0.20)` — inusuales para un yield ya-porcentual pero típicos de una fracción sin convertir — y los escala ×100 automáticamente, registrando `[WARN] dividendYield ... llegó como fracción` en logs. Revisar logs de Railway tras actualizar la versión de `yfinance` en `requirements.txt`.
+
+**Fuente corregida de `free_cash_flow`:** `info.freeCashflow` resultó no confiable — verificado en MSFT devolvía ~$37B vs ~$71.6B del cashflow statement del año fiscal más reciente (~2x de diferencia). `core._obtener_free_cash_flow()` ahora lee `Ticker.cashflow.loc["Free Cash Flow"]` como fuente principal, con fallback a `info.freeCashflow` para activos sin cashflow statement (ETFs, fondos).
 
 ---
 

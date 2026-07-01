@@ -51,6 +51,25 @@ def _normalizar_dividend_yield(ticker: str, valor: float | None) -> float:
     return valor
 
 
+def _obtener_free_cash_flow(yf_ticker: "yf.Ticker") -> float | None:
+    """
+    info["freeCashflow"] de yfinance resultó no confiable (verificado en MSFT:
+    devolvía ~$37B vs ~$71.6B del cashflow statement del año fiscal más
+    reciente, casi 2x de diferencia). Se usa Ticker.cashflow como fuente
+    principal por ser más auditable, con fallback a info() para activos sin
+    cashflow statement (ETFs, fondos).
+    """
+    try:
+        cf = yf_ticker.cashflow
+        if cf is not None and "Free Cash Flow" in cf.index:
+            valor = cf.loc["Free Cash Flow"].dropna()
+            if not valor.empty:
+                return float(valor.iloc[0])
+    except Exception:
+        pass
+    return None
+
+
 def _extraer_serie(datos_raw: pd.DataFrame, ticker: str) -> pd.Series:
     """
     Extrae serie de precios de cierre ajustado.
@@ -94,8 +113,9 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
                 serie_precios = serie_precios * tc_alineado
 
             time.sleep(0.2)
+            yf_ticker = yf.Ticker(ticker)
             try:
-                info = yf.Ticker(ticker).info
+                info = yf_ticker.info
             except Exception:
                 info = {}
 
@@ -110,7 +130,9 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
             payout_ratio = info.get("payoutRatio")
             roe = info.get("returnOnEquity")
             ebitda = info.get("ebitda")
-            fcf = info.get("freeCashflow")
+            fcf = _obtener_free_cash_flow(yf_ticker)
+            if fcf is None:
+                fcf = info.get("freeCashflow")
 
             metricas_activos.append({
                 "ticker": ticker,
