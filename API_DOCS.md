@@ -88,6 +88,12 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
       "precio_actual": 32.37,
       "dividend_yield_pct": 3.29,
       "trailing_per": 19.20,
+      "forward_per": 18.05,
+      "ev_to_ebitda": 12.4,
+      "roe_pct": 14.2,
+      "ebitda": 159975997440,
+      "free_cash_flow": 101090746368,
+      "payout_ratio_pct": 55.3,
       "retorno_anualizado_pct": 24.79,
       "volatilidad_anualizada_pct": 10.94,
       "sharpe_ratio": 1.86
@@ -106,9 +112,17 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
 | `precio_actual` | Precio de cierre más reciente | `info.currentPrice` |
 | `dividend_yield_pct` | Dividend yield en % (ej: 3.29 = 3.29%) | `info.dividendYield` |
 | `trailing_per` | Price/Earnings ratio trailing 12m | `info.trailingPE` |
+| `forward_per` | Price/Earnings ratio forward (estimado) | `info.forwardPE` |
+| `ev_to_ebitda` | Enterprise Value / EBITDA | `info.enterpriseToEbitda` |
+| `roe_pct` | Return on Equity en % | `info.returnOnEquity` |
+| `ebitda` | EBITDA en moneda original del activo | `info.ebitda` |
+| `free_cash_flow` | Free Cash Flow en moneda original del activo | `info.freeCashflow` |
+| `payout_ratio_pct` | Porcentaje de utilidades pagado como dividendo | `info.payoutRatio` |
 | `retorno_anualizado_pct` | Retorno anualizado histórico en % | Calculado: `log_ret.mean() * 252` |
 | `volatilidad_anualizada_pct` | Volatilidad anualizada en % | Calculado: `log_ret.std() * √252` |
 | `sharpe_ratio` | Sharpe Ratio vs tasa libre 4.5% | Calculado: `(ret - rf) / vol` |
+
+**Nota:** `forward_per`, `ev_to_ebitda`, `roe_pct`, `ebitda`, `free_cash_flow` y `payout_ratio_pct` pueden ser `null` para ETFs, fondos o activos sin esos datos fundamentales publicados.
 
 ---
 

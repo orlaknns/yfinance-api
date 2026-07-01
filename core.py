@@ -90,6 +90,11 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
                 if volatilidad_anualizada > 0 else None
             )
 
+            payout_ratio = info.get("payoutRatio")
+            roe = info.get("returnOnEquity")
+            ebitda = info.get("ebitda")
+            fcf = info.get("freeCashflow")
+
             metricas_activos.append({
                 "ticker": ticker,
                 "nombre": info.get("longName"),
@@ -97,6 +102,12 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
                 "precio_actual": info.get("currentPrice", info.get("previousClose")),
                 "dividend_yield_pct": round((info.get("dividendYield", 0) or 0), 2),
                 "trailing_per": info.get("trailingPE"),
+                "forward_per": info.get("forwardPE"),
+                "ev_to_ebitda": info.get("enterpriseToEbitda"),
+                "roe_pct": round(roe * 100, 2) if roe is not None else None,
+                "ebitda": ebitda,
+                "free_cash_flow": fcf,
+                "payout_ratio_pct": round(payout_ratio * 100, 2) if payout_ratio is not None else None,
                 "retorno_anualizado_pct": round(retorno_anualizado * 100, 2),
                 "volatilidad_anualizada_pct": round(volatilidad_anualizada * 100, 2),
                 "sharpe_ratio": round(sharpe, 2) if sharpe is not None else None,
