@@ -130,6 +130,8 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
 
 **Fuente corregida de `free_cash_flow`:** `info.freeCashflow` resultó no confiable — verificado en MSFT devolvía ~$37B vs ~$71.6B del cashflow statement del año fiscal más reciente (~2x de diferencia). `core._obtener_free_cash_flow()` ahora lee `Ticker.cashflow.loc["Free Cash Flow"]` como fuente principal, con fallback a `info.freeCashflow` para activos sin cashflow statement (ETFs, fondos).
 
+**Nota — cierres de año fiscal distintos entre tickers:** `ebitda` y `free_cash_flow` corresponden al año fiscal más reciente reportado por cada empresa, y **no todas cierran en la misma fecha**. Verificado con AVGO (cierra 31-oct) vs NVDA (cierra 31-ene): hay un desfase de ~3 meses entre los cortes de ambos, aunque los dos digan "año fiscal más reciente". Al comparar estos campos entre tickers (ej. para un ranking o screener), considerar que no están sincronizados en el tiempo — es una limitación inherente a cómo yfinance reporta los estados financieros, no un error de la API.
+
 ---
 
 ### `POST /historia`
