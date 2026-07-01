@@ -957,6 +957,18 @@
           <div class="expected"><strong>Esperado →</strong> HTTP 200 sin error aunque <code>ebitda</code>, <code>roe_pct</code> o <code>ev_to_ebitda</code> vengan como <code>null</code> (SCHD es un ETF, no reporta EBITDA/ROE)</div>
         </div>
       </div>
+
+      <div class="test-card">
+        <div class="test-header"><div class="test-num">15</div><div class="test-title">Rango válido de dividend_yield_pct (detección de cambio de formato yfinance)</div></div>
+        <div class="test-body">
+          <pre><code><span class="bash-cmd">curl</span> <span class="bash-flag">-s -X POST</span> https://yfinance-api-prod.up.railway.app/metricas \
+  <span class="bash-flag">-H</span> <span class="bash-val">"Content-Type: application/json"</span> \
+  <span class="bash-flag">-H</span> <span class="bash-val">"X-API-Key: bbP28WBCw6NGZ-FDFNI88nr8kQpAwZPRA9YiQsDN8Zk"</span> \
+  <span class="bash-flag">-d</span> <span class="bash-val">'{"tickers": [{"ticker": "MSFT"}, {"ticker": "SCHD"}, {"ticker": "AAPL"}], "periodo": "1mo"}'</span> \
+  | python3 -m json.tool</code><button class="copy-btn" onclick="copy(this)">copiar</button></pre>
+          <div class="expected"><strong>Esperado →</strong> <code>dividend_yield_pct</code> de cada ticker en el rango <code>(0, 20]</code> (ej: MSFT ~0.98, SCHD ~3.25, AAPL ~0.37). Si <code>core.py</code> registra <code>[WARN] dividendYield ... llegó como fracción</code> en logs, significa que yfinance cambió el formato del campo y <code>_normalizar_dividend_yield()</code> lo corrigió automáticamente escalando x100 — revisar logs de Railway tras cada actualización de la librería <code>yfinance</code>.</div>
+        </div>
+      </div>
     </section>
 
     <!-- Integration notes -->

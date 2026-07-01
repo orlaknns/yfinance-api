@@ -124,6 +124,8 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
 
 **Nota:** `forward_per`, `ev_to_ebitda`, `roe_pct`, `ebitda`, `free_cash_flow` y `payout_ratio_pct` pueden ser `null` para ETFs, fondos o activos sin esos datos fundamentales publicados.
 
+**Validación defensiva de `dividend_yield_pct`:** yfinance ha cambiado en el pasado el formato de `info.dividendYield` entre fracción (`0.0329`) y porcentual (`3.29`). `core._normalizar_dividend_yield()` detecta valores en el rango `(0, 0.20)` — inusuales para un yield ya-porcentual pero típicos de una fracción sin convertir — y los escala ×100 automáticamente, registrando `[WARN] dividendYield ... llegó como fracción` en logs. Revisar logs de Railway tras actualizar la versión de `yfinance` en `requirements.txt`.
+
 ---
 
 ### `POST /historia`

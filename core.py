@@ -34,6 +34,23 @@ def obtener_tipo_cambio_usdclp(periodo: str) -> pd.Series | None:
         return None
 
 
+def _normalizar_dividend_yield(ticker: str, valor: float | None) -> float:
+    """
+    yfinance ha cambiado el formato de `info.dividendYield` entre versiones:
+    a veces fracción (0.0329 = 3.29%), a veces ya-porcentual (3.29 = 3.29%).
+    Un yield fracción realista nunca supera ~0.20 (20%), mientras que valores
+    ya-porcentuales bajos (ej. 0.98 = 0.98%) también son válidos y no deben
+    escalarse. Por eso el umbral de detección es 0.20, no 1, para no confundir
+    un yield porcentual bajo con una fracción sin convertir.
+    """
+    if not valor:
+        return 0.0
+    if 0 < valor < 0.20:
+        print(f"[WARN] dividendYield de {ticker} llegó como fracción ({valor}); se escala x100")
+        return valor * 100
+    return valor
+
+
 def _extraer_serie(datos_raw: pd.DataFrame, ticker: str) -> pd.Series:
     """
     Extrae serie de precios de cierre ajustado.
@@ -100,7 +117,7 @@ def obtener_metricas(tickers: list[dict], periodo: str = "1y") -> list[dict]:
                 "nombre": info.get("longName"),
                 "moneda": info.get("currency"),
                 "precio_actual": info.get("currentPrice", info.get("previousClose")),
-                "dividend_yield_pct": round((info.get("dividendYield", 0) or 0), 2),
+                "dividend_yield_pct": round(_normalizar_dividend_yield(ticker, info.get("dividendYield")), 2),
                 "trailing_per": info.get("trailingPE"),
                 "forward_per": info.get("forwardPE"),
                 "ev_to_ebitda": info.get("enterpriseToEbitda"),
