@@ -520,6 +520,7 @@
           </div>
           <div class="expected"><strong>⚠️ Nota →</strong> <code>forward_per</code>, <code>ev_to_ebitda</code>, <code>roe_pct</code>, <code>ebitda</code>, <code>free_cash_flow</code> y <code>payout_ratio_pct</code> pueden ser <code>null</code> para ETFs, fondos o activos sin esos datos fundamentales publicados.</div>
           <div class="expected"><strong>⚠️ Nota →</strong> <code>free_cash_flow</code> se calcula desde <code>Ticker.cashflow.loc["Free Cash Flow"]</code> (año fiscal más reciente), no desde <code>info.freeCashflow</code>. Se detectó que este último subestimaba el FCF real (ej: MSFT ~$37B vs ~$71.6B del cashflow statement, casi 2x de diferencia). Fallback a <code>info.freeCashflow</code> solo si el ticker no tiene cashflow statement (ETFs, fondos).</div>
+          <div class="expected"><strong>⚠️ Nota — bancos y financieras (ej. JPM) →</strong> <code>ebitda</code> y <code>ev_to_ebitda</code> suelen venir <code>null</code> — yfinance no reporta EBITDA para instituciones financieras porque el concepto no aplica bien a su modelo de negocio. Además <code>free_cash_flow</code> puede aparecer <strong>negativo o con variaciones extremas</strong> entre periodos, ya que el cashflow operativo de un banco incluye movimientos de depósitos, préstamos y trading — no es comparable con el FCF de una empresa no financiera y no indica problema de liquidez.</div>
         </div>
       </div>
     </section>
@@ -749,6 +750,11 @@
           <div class="icon">null</div>
           <h4>Campos nulos</h4>
           <p><code>trailingPE</code>, <code>forwardPE</code> pueden ser <code>null</code> para ETFs, fondos o activos sin earnings reportados.</p>
+        </div>
+        <div class="restriction-card">
+          <div class="icon">🏦</div>
+          <h4>Bancos y financieras</h4>
+          <p><code>ebitda</code>/<code>ev_to_ebitda</code> suelen ser <code>null</code> (concepto no aplica al modelo de negocio bancario) y <code>free_cash_flow</code> puede ser negativo o muy volátil entre periodos (incluye flujos de depósitos, préstamos y trading).</p>
         </div>
       </div>
 

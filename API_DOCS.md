@@ -124,6 +124,8 @@ Devuelve métricas fundamentales y estadísticas para hasta **20 tickers**. Los 
 
 **Nota:** `forward_per`, `ev_to_ebitda`, `roe_pct`, `ebitda`, `free_cash_flow` y `payout_ratio_pct` pueden ser `null` para ETFs, fondos o activos sin esos datos fundamentales publicados.
 
+**Nota — bancos y financieras (ej. JPM):** `ebitda` y `ev_to_ebitda` suelen venir `null` — yfinance no reporta EBITDA para instituciones financieras porque el concepto no aplica bien a su modelo de negocio. Además, `free_cash_flow` puede aparecer **negativo o con variaciones extremas** entre periodos, ya que para bancos el cashflow operativo incluye movimientos de depósitos, préstamos y trading — no es comparable con el FCF de una empresa no financiera y no debe interpretarse como señal de problema de liquidez.
+
 **Validación defensiva de `dividend_yield_pct`:** yfinance ha cambiado en el pasado el formato de `info.dividendYield` entre fracción (`0.0329`) y porcentual (`3.29`). `core._normalizar_dividend_yield()` detecta valores en el rango `(0, 0.20)` — inusuales para un yield ya-porcentual pero típicos de una fracción sin convertir — y los escala ×100 automáticamente, registrando `[WARN] dividendYield ... llegó como fracción` en logs. Revisar logs de Railway tras actualizar la versión de `yfinance` en `requirements.txt`.
 
 **Fuente corregida de `free_cash_flow`:** `info.freeCashflow` resultó no confiable — verificado en MSFT devolvía ~$37B vs ~$71.6B del cashflow statement del año fiscal más reciente (~2x de diferencia). `core._obtener_free_cash_flow()` ahora lee `Ticker.cashflow.loc["Free Cash Flow"]` como fuente principal, con fallback a `info.freeCashflow` para activos sin cashflow statement (ETFs, fondos).
@@ -312,6 +314,7 @@ La API actualmente expone un subconjunto. A continuación el inventario completo
 | **Tickers deslistados** | `.info` puede devolver `{}` o lanzar excepción para activos suspendidos o delisted |
 | **Cobertura IPSA** | No todos los activos del IPSA tienen datos completos. Activos con baja liquidez pueden tener gaps en la serie histórica |
 | **Campos nulos** | Campos como `trailingPE`, `forwardPE` pueden ser `null` para ETFs, fondos o activos sin earnings |
+| **Bancos y financieras** | `ebitda`/`ev_to_ebitda` suelen ser `null` (concepto no aplica al modelo de negocio bancario) y `free_cash_flow` puede ser negativo o muy volátil entre periodos (incluye flujos de depósitos, préstamos y trading) |
 | **Cambios de API** | yfinance ha cambiado su estructura de datos en versiones menores sin aviso (ej: MultiIndex orientation). Versión fijada en `requirements.txt` |
 
 ### Esta API
